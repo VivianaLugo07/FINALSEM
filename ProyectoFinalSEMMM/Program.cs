@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BibliotecaDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IRepositorioLibros, RepositorioLibros>();
 builder.Services.AddScoped<IRepositorioAutores, RepositorioAutores>();
+builder.Services.AddScoped<IRepositorioGeneros, RepositorioGeneros>();
 
 builder.Services.AddRazorComponents()
 

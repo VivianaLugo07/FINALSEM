@@ -1,0 +1,76 @@
+﻿@page "/generos/editar/{id:int}"
+@page "/generos/editar"
+@rendermode InteractiveServer
+
+@inject IRepositorioGeneros _repositorioGeneros
+@inject NavigationManager _navigator
+
+<h2>@_mensaje Género</h2>
+
+<EditForm Model="_genero" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <label class="col-2 col-form-label">Nombre</label>
+        <div class="col-10">
+            <InputText class="form-control" @bind-Value="_genero.Nombre" />
+            <ValidationMessage For="() => _genero.Nombre" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-2 col-form-label">Descripción</label>
+        <div class="col-10">
+            <InputTextArea class="form-control" @bind-Value="_genero.Descripcion" />
+            <ValidationMessage For="() => _genero.Descripcion" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-danger ms-3" @onclick="Cancelar">Cancelar</button>
+</EditForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Genero _genero = new();
+    private string _mensaje = "Nuevo";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var generoExistente = await _repositorioGeneros.Get(Id.Value);
+            if (generoExistente != null)
+            {
+                _genero = new Genero
+                    {
+                        Id = generoExistente.Id,
+                        Nombre = generoExistente.Nombre,
+                        Descripcion = generoExistente.Descripcion
+                    };
+                _mensaje = "Editar";
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Id.HasValue)
+        {
+            await _repositorioGeneros.Update(_genero.Id, _genero);
+        }
+        else
+        {
+            await _repositorioGeneros.Add(_genero);
+        }
+
+        _navigator.NavigateTo("/generos");
+    }
+
+    private void Cancelar()
+    {
+        _navigator.NavigateTo("/generos");
+    }
+}

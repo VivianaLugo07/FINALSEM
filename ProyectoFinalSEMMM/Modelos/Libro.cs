@@ -24,6 +24,7 @@ namespace ProyectoFinalSEMMM.Modelos
         public int AutorId { get; set; }
         //leer el contenido desde la tabla persona
         virtual public Autor? Autor { get; set; }
+        virtual public ICollection<Genero>? Generos { get; set; }
 
     }
 }
