@@ -1,0 +1,85 @@
+﻿@page "/autores/editar/{id:int}"
+@page "/autores/editar"
+@rendermode InteractiveServer
+
+@inject IRepositorioAutores _repositorioAutores
+@inject NavigationManager _navigator
+
+<h2>@_mensaje Autor</h2>
+
+<EditForm Model="_autor" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <label class="col-2 col-form-label">Nombre</label>
+        <div class="col-10">
+            <InputText class="form-control" @bind-Value="_autor.Nombre" />
+            <ValidationMessage For="() => _autor.Nombre" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-2 col-form-label">Edad</label>
+        <div class="col-10">
+            <InputNumber class="form-control" @bind-Value="_autor.Edad" />
+            <ValidationMessage For="() => _autor.Edad" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label class="col-2 col-form-label">Nacionalidad</label>
+        <div class="col-10">
+            <InputText class="form-control" @bind-Value="_autor.Nacionalidad" />
+            <ValidationMessage For="() => _autor.Nacionalidad" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-danger ms-3" @onclick="Cancelar">Cancelar</button>
+</EditForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Autor _autor = new();
+    private string _mensaje = "Nuevo";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var autorExistente = await _repositorioAutores.Get(Id.Value);
+            if (autorExistente != null)
+            {
+                _autor = new Autor
+                    {
+                        Id = autorExistente.Id,
+                        Nombre = autorExistente.Nombre,
+                        Edad = autorExistente.Edad,
+                        Nacionalidad = autorExistente.Nacionalidad
+                    };
+                _mensaje = "Editar";
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Id.HasValue)
+        {
+            await _repositorioAutores.Update(_autor.Id, _autor);
+        }
+        else
+        {
+            await _repositorioAutores.Add(_autor);
+        }
+
+        _navigator.NavigateTo("/autores");
+    }
+
+    private void Cancelar()
+    {
+        _navigator.NavigateTo("/autores");
+    }
+}

@@ -1,8 +1,11 @@
-﻿@page "/libros/editar/{id:int}"
-@page "/libros/editar"
+﻿@page "/libros/editar"
+@page "/libros/editar/{id:int}"
+
 @rendermode InteractiveServer
 @inject IRepositorioLibros _repositorio
 @inject NavigationManager _navigator
+@inject IRepositorioAutores _repositorioAutores
+
 
 <h2>@_mensaje Libro</h2>
 
@@ -33,6 +36,23 @@
             <ValidationMessage For="()=>_libro.Editorial" />
         </div>
     </div>
+    <div class="row mb-3">
+        <label for="autorSelect" class="col-2 col-form-label">Autor</label>
+        <div class="col-10">
+            <InputSelect id="autorSelect" class="form-select" @bind-Value="_libro.AutorId">
+                <option value="">Seleccione autor...</option>
+                @if (_autores != null)
+                {
+                    @foreach (var autor in _autores)
+                    {
+                        <option value="@autor.Id">@autor.Nombre</option>
+                    }
+                }
+            </InputSelect>
+            <ValidationMessage For="() => _libro.AutorId" />
+        </div>
+    </div>
+
 
     <button type="submit" class="btn btn-primary">Guardar</button>
     <button type="button" class="btn btn-danger ms-3" @onclick="Cancelar">Cancelar</button>
@@ -41,13 +61,18 @@
 </EditForm>
 
 @code {
-    [Parameter] public int? Id { get; set; }
-
+    [Parameter] 
+    public int? Id { get; set; }
     private Libro _libro = new();
     private string _mensaje = "Nuevo";
+    private List<Autor>? _autores;
+
+
 
     protected override async Task OnInitializedAsync()
     {
+        _autores = await _repositorioAutores.GetAll(); 
+
         if (Id.HasValue)
         {
             var libroExistente = await _repositorio.Get(Id.Value);
@@ -58,13 +83,15 @@
                         Id = libroExistente.Id,
                         Titulo = libroExistente.Titulo,
                         AnoPublicacion = libroExistente.AnoPublicacion,
-                        Editorial = libroExistente.Editorial
+                        Editorial = libroExistente.Editorial,
+                        AutorId = libroExistente.AutorId 
                     };
                 _mensaje = "Editar";
             }
         }
 
     }
+
 
     private async Task Guardar()
     {

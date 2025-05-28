@@ -31,8 +31,11 @@ namespace ProyectoFinalSEMMM.Repositorio
 
         public async Task<Libro?> Get(int id)
         {
-            return await _contexto.Libros.FindAsync(id);
+            return await _contexto.Libros
+                .Include(l => l.Autor) // <- para que también funcione al editar
+                .FirstOrDefaultAsync(l => l.Id == id);
         }
+
 
         public async Task<List<Libro>> GetAll()
         {
