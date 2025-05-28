@@ -1,0 +1,90 @@
+﻿@page "/libros/editar/{id:int}"
+@page "/libros/editar"
+@rendermode InteractiveServer
+@inject IRepositorioLibros _repositorio
+@inject NavigationManager _navigator
+
+<h2>@_mensaje Libro</h2>
+
+<EditForm Model="_libro" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <label for="txtTitulo" class="col-2 col-form-label">Título</label>
+        <div class="col-10">
+            <InputText id="txtTitulo" class="form-control" @bind-Value="_libro.Titulo" />
+            <ValidationMessage For="()=>_libro.Titulo" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label for="txtAno" class="col-2 col-form-label">Año de Publicación</label>
+        <div class="col-10">
+            <InputNumber id="txtAno" class="form-control" @bind-Value="_libro.AnoPublicacion" />
+            <ValidationMessage For="()=>_libro.AnoPublicacion" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label for="txtEditorial" class="col-2 col-form-label">Editorial</label>
+        <div class="col-10">
+            <InputText id="txtEditorial" class="form-control" @bind-Value="_libro.Editorial" />
+            <ValidationMessage For="()=>_libro.Editorial" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button type="button" class="btn btn-danger ms-3" @onclick="Cancelar">Cancelar</button>
+
+
+</EditForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Libro _libro = new();
+    private string _mensaje = "Nuevo";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            var libroExistente = await _repositorio.Get(Id.Value);
+            if (libroExistente != null)
+            {
+                _libro = new Libro
+                    {
+                        Id = libroExistente.Id,
+                        Titulo = libroExistente.Titulo,
+                        AnoPublicacion = libroExistente.AnoPublicacion,
+                        Editorial = libroExistente.Editorial
+                    };
+                _mensaje = "Editar";
+            }
+        }
+
+    }
+
+    private async Task Guardar()
+    {
+        if (Id.HasValue)
+        {
+            await _repositorio.Update(_libro.Id, _libro);
+        }
+        else
+        {
+            await _repositorio.Add(_libro);
+
+        }
+
+        _navigator.NavigateTo("/libros");
+    }
+
+    private void Cancelar()
+    {
+        _navigator.NavigateTo("/libros");
+    }
+
+}
+

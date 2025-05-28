@@ -1,0 +1,14 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ProyectoFinalSEMMM.Modelos;
+
+namespace ProyectoFinalSEMMM.Modelos
+{
+    public class BibliotecaDbContext : DbContext
+    {
+        public BibliotecaDbContext(DbContextOptions<BibliotecaDbContext> options) : base(options)
+        {
+        }
+        public DbSet<Libro> Libros { get; set; }
+
+    }
+}
