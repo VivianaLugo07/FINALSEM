@@ -1,108 +1,111 @@
 ﻿@page "/libros/editar"
-@page "/libros/editar/{id:int}"
-
+@page "/libros/editar/{Id:int}"
 @rendermode InteractiveServer
-@inject IRepositorioLibros _repositorio
 @inject NavigationManager _navigator
+@using ProyectoFinalSEMMM.Modelos
+@using ProyectoFinalSEMMM.Repositorios
+@inject IRepositorioLibros RepositorioLibros
+@inject IRepositorioAutores RepositorioAutores
+@inject IRepositorioGeneros RepositorioGeneros
+@inject IRepositorioLibros _repositorioLibros
 @inject IRepositorioAutores _repositorioAutores
+@inject IRepositorioGeneros _repositorioGeneros
 
-
-<h2>@_mensaje Libro</h2>
-
+<h3>@(Id == null ? "Nuevo Libro" : "Editar Libro")</h3>
 <EditForm Model="_libro" OnValidSubmit="Guardar">
     <DataAnnotationsValidator />
     <ValidationSummary />
-
-    <div class="row mb-3">
-        <label for="txtTitulo" class="col-2 col-form-label">Título</label>
-        <div class="col-10">
-            <InputText id="txtTitulo" class="form-control" @bind-Value="_libro.Titulo" />
-            <ValidationMessage For="()=>_libro.Titulo" />
-        </div>
+    <div>
+        <label>Título:</label>
+        <InputText @bind-Value="_libro.Titulo" class="form-control" />
+    </div>
+    <div>
+        <label>Editorial:</label>
+        <InputText @bind-Value="_libro.Editorial" class="form-control" />
     </div>
 
-    <div class="row mb-3">
-        <label for="txtAno" class="col-2 col-form-label">Año de Publicación</label>
-        <div class="col-10">
-            <InputNumber id="txtAno" class="form-control" @bind-Value="_libro.AnoPublicacion" />
-            <ValidationMessage For="()=>_libro.AnoPublicacion" />
-        </div>
+    <div>
+        <label>Año de Publicación:</label>
+        <InputNumber @bind-Value="_libro.AnoPublicacion" class="form-control" />
+    </div>
+    <div>
+        <label>Autor:</label>
+        <InputSelect @bind-Value="_libro.AutorId" class="form-control">
+            <option value="">Seleccione un autor</option>
+            @foreach (var autor in _autores)
+            {
+                <option value="@autor.Id">@autor.Nombre</option>
+            }
+        </InputSelect>
+    </div>
+    <div>
+        <label>Géneros:</label>
+        @foreach (var genero in _generosDisponibles)
+        {
+            <div>
+                <input type="checkbox" value="@genero.Id"
+                       @onchange="e => SeleccionarGenero(genero.Id, (bool)((ChangeEventArgs)e).Value)"
+                       checked="@generoSeleccionadoIds.Contains(genero.Id)" />
+                @genero.Nombre
+            </div>
+        }
     </div>
 
-    <div class="row mb-3">
-        <label for="txtEditorial" class="col-2 col-form-label">Editorial</label>
-        <div class="col-10">
-            <InputText id="txtEditorial" class="form-control" @bind-Value="_libro.Editorial" />
-            <ValidationMessage For="()=>_libro.Editorial" />
-        </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
     </div>
-    <div class="row mb-3">
-        <label for="autorSelect" class="col-2 col-form-label">Autor</label>
-        <div class="col-10">
-            <InputSelect id="autorSelect" class="form-select" @bind-Value="_libro.AutorId">
-                <option value="">Seleccione autor...</option>
-                @if (_autores != null)
-                {
-                    @foreach (var autor in _autores)
-                    {
-                        <option value="@autor.Id">@autor.Nombre</option>
-                    }
-                }
-            </InputSelect>
-            <ValidationMessage For="() => _libro.AutorId" />
-        </div>
-    </div>
-
-
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <button type="button" class="btn btn-danger ms-3" @onclick="Cancelar">Cancelar</button>
-
-
 </EditForm>
 
 @code {
-    [Parameter] 
+    [Parameter]
     public int? Id { get; set; }
+
     private Libro _libro = new();
-    private string _mensaje = "Nuevo";
-    private List<Autor>? _autores;
-
-
+    private Libro _libroOriginal = new();
+    private List<Autor> _autores = new();
+    private List<Genero> _generosDisponibles = new();
+    private List<int> generoSeleccionadoIds = new();
 
     protected override async Task OnInitializedAsync()
     {
-        _autores = await _repositorioAutores.GetAll(); 
+        _autores = await _repositorioAutores.GetAll();
+        _generosDisponibles = await _repositorioGeneros.GetAll();
 
-        if (Id.HasValue)
+        if (Id != null)
         {
-            var libroExistente = await _repositorio.Get(Id.Value);
+            var libroExistente = await _repositorioLibros.Get(Id.Value);
             if (libroExistente != null)
             {
-                _libro = new Libro
+                _libro = libroExistente;
+
+                // Clonar para posible cancelación
+                _libroOriginal = new Libro
                     {
-                        Id = libroExistente.Id,
-                        Titulo = libroExistente.Titulo,
-                        AnoPublicacion = libroExistente.AnoPublicacion,
-                        Editorial = libroExistente.Editorial,
-                        AutorId = libroExistente.AutorId 
-                    };
-                _mensaje = "Editar";
+                        Id = _libro.Id,
+                        Titulo = _libro.Titulo,
+                        Editorial = _libro.Editorial,
+                        AnoPublicacion = _libro.AnoPublicacion,
+                        AutorId = _libro.AutorId,
+                        Generos = _libro.Generos != null ? new List<Genero>(_libro.Generos) : new List<Genero>()
+                 };
+                generoSeleccionadoIds = _libro.Generos?.Select(g => g.Id).ToList() ?? new();
             }
-        }
-
-    }
-
-
+        }}
     private async Task Guardar()
     {
-        if (Id.HasValue)
+        // Asignar géneros seleccionados
+        _libro.Generos = _generosDisponibles
+            .Where(g => generoSeleccionadoIds.Contains(g.Id))
+            .ToList();
+
+        if (Id == null)
         {
-            await _repositorio.Update(_libro.Id, _libro);
+            await _repositorioLibros.Add(_libro);
         }
         else
         {
-            await _repositorio.Add(_libro);
-
+            await _repositorioLibros.Update(_libro.Id, _libro);
         }
 
         _navigator.NavigateTo("/libros");
@@ -110,8 +113,38 @@
 
     private void Cancelar()
     {
-        _navigator.NavigateTo("/libros");
+        if (Id == null)
+        {
+            _navigator.NavigateTo("/libros");
+        }
+        else
+        {
+            // Volver a valores originales si está editando
+            _libro = new Libro
+                {
+                    Id = _libroOriginal.Id,
+                    Titulo = _libroOriginal.Titulo,
+                    Editorial = _libroOriginal.Editorial,
+                    AnoPublicacion = _libroOriginal.AnoPublicacion,
+                    AutorId = _libroOriginal.AutorId,
+                    Generos = _libroOriginal.Generos != null ? new List<Genero>(_libroOriginal.Generos) : new List<Genero>()
+                };
+
+            generoSeleccionadoIds = _libro.Generos.Select(g => g.Id).ToList();
+            _navigator.NavigateTo("/libros");
+        }
     }
 
+    private void SeleccionarGenero(int generoId, bool seleccionado)
+    {
+        if (seleccionado)
+        {
+            if (!generoSeleccionadoIds.Contains(generoId))
+                generoSeleccionadoIds.Add(generoId);
+        }
+        else
+        {
+            generoSeleccionadoIds.Remove(generoId);
+        }
+    }
 }
-
